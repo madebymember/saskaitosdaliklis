@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="lt" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sąskaitos Daliklis — Patogus čekio padalinimas draugams</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 9999px;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .fade-in {
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200 pb-20">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 hidden transform transition-all duration-300">
+        <div class="bg-slate-900 dark:bg-indigo-600 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-medium border border-slate-700/50">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+            <span id="toast-message">Suvestinė nukopijuota!</span>
+        </div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-30 backdrop-blur-md bg-white/85 dark:bg-slate-900/85 border-b border-slate-200/80 dark:border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+                    <i class="fa-solid fa-receipt text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg leading-tight tracking-tight">Sąskaitos Daliklis</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Greitas ir tikslus restorano čekio padalinimas</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="loadDemoData()" title="Užpildyti pavyzdiniais duomenimis" class="px-3 py-2 text-xs font-semibold rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/70 dark:text-indigo-300 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span class="hidden md:inline">Pavyzdys</span>
+                </button>
+                <button onclick="openResetModal()" title="Išvalyti visus duomenis" class="px-3 py-2 text-xs font-semibold rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 dark:text-rose-300 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span class="hidden md:inline">Išvalyti</span>
+                </button>
+                <button onclick="openGithubModal()" title="GitHub Pages ir subdomeno instrukcija" class="p-2.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 transition">
+                    <i class="fa-brands fa-github text-base"></i>
+                </button>
+                <button onclick="toggleTheme()" id="theme-btn" title="Perjungti šviesią/tamsią temą" class="p-2.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 transition">
+                    <i class="fa-solid fa-moon text-base dark:hidden"></i>
+                    <i class="fa-solid fa-sun text-base hidden dark:inline text-amber-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- LEFT COLUMN: Inputs (Bill Total, People, Items, Tips) -->
+            <div class="lg:col-span-7 space-y-6">
+
+                <!-- 1. BENDRA SĄSKAITOS SUMA IŠ ČEKIO -->
+                <section class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center">1</span>
+                            <h2 class="font-bold text-base sm:text-lg">Bendra sąskaitos suma iš čekio</h2>
+                        </div>
+                        <span class="text-xs text-slate-400 dark:text-slate-500">Be arbatpinigių</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                        <div class="relative">
+                            <label for="check-total-input" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                                Įveskite čekio sumą kontroliniam tikrinimui:
+                            </label>
+                            <div class="relative">
+                                <input
+                                    id="check-total-input"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0.00"
+                                    oninput="handleCheckTotalChange(this.value)"
+                                    class="w-full pl-4 pr-10 py-3 text-xl font-bold rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                                >
+                                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-bold text-slate-400">€</span>
+                            </div>
+                        </div>
+
+                        <!-- Live Status Card -->
+                        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3.5 border border-slate-200/60 dark:border-slate-700/60">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-500 dark:text-slate-400">Priskirta patiekalams:</span>
+                                <span id="assigned-sum-label" class="font-bold text-slate-800 dark:text-slate-100">0.00 €</span>
+                            </div>
+                            <div class="flex justify-between text-xs mb-2.5">
+                                <span id="remaining-title-label" class="text-slate-500 dark:text-slate-400">Liko nepaskirstyta:</span>
+                                <span id="remaining-sum-label" class="font-bold text-amber-600 dark:text-amber-400">0.00 €</span>
+                            </div>
+                            <!-- Progress bar -->
+                            <div class="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div id="check-progress-bar" class="h-full bg-indigo-600 transition-all duration-300 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <p id="check-status-hint" class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
+                                Įveskite čekio sumą arba tiesiog pridėkite patiekalus žemiau.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Unassigned Balance Actions -->
+                    <div id="unassigned-actions" class="hidden mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                id="split-remainder-toggle"
+                                onchange="toggleAutoSplitRemainder(this.checked)"
+                                class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                            >
+                            <span class="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">
+                                Automatiškai padalinti nepaskirstytą likutį (<span id="remainder-inline-amount" class="font-bold text-indigo-600 dark:text-indigo-400">0.00 €</span>) visiems po lygiai
+                            </span>
+                        </label>
+                        <button
+                            onclick="convertRemainderToDish()"
+                            class="text-xs font-semibold px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 dark:text-amber-300 transition self-start sm:self-auto shrink-0"
+                        >
+                            + Pridėti likutį kaip bendrą prekę
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 2. DALYVIŲ VALDYMAS -->
+                <section class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center">2</span>
+                            <h2 class="font-bold text-base sm:text-lg">Dalyviai prie stalo</h2>
+                        </div>
+                        <span id="people-count-badge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                            0 asm.
+                        </span>
+                    </div>
+
+                    <!-- Add person form -->
+                    <form onsubmit="handleAddPerson(event)" class="flex gap-2 mb-4">
+                        <div class="relative flex-1">
+                            <i class="fa-solid fa-user-plus absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input
+                                id="person-name-input"
+                                type="text"
+                                maxlength="30"
+                                placeholder="Pvz.: Tomas, Ieva, Jonas..."
+                                class="w-full pl-9 pr-4 py-2.5 text-sm rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                            >
+                        </div>
+                        <button
+                            type="submit"
+                            class="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-semibold text-sm shadow-sm shadow-indigo-500/20 transition flex items-center gap-1.5 shrink-0"
+                        >
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Pridėti</span>
+                        </button>
+                    </form>
+
+                    <!-- Quick Preset Names -->
+                    <div class="flex flex-wrap items-center gap-1.5 mb-4">
+                        <span class="text-[11px] text-slate-400 mr-1">Greitas pridėjimas:</span>
+                        <button type="button" onclick="quickAddPerson('Aš')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+ Aš</button>
+                        <button type="button" onclick="quickAddPerson('Tomas')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+ Tomas</button>
+                        <button type="button" onclick="quickAddPerson('Ieva')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+ Ieva</button>
+                        <button type="button" onclick="quickAddPerson('Jonas')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+ Jonas</button>
+                        <button type="button" onclick="quickAddPerson('Eglė')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+ Eglė</button>
+                    </div>
+
+                    <!-- People Chips List -->
+                    <div id="people-list" class="flex flex-wrap gap-2">
+                        <!-- Rendered via JS -->
+                    </div>
+                </section>
+
+                <!-- 3. PATIEKALŲ IR GĖRIMŲ SĄRAŠAS -->
+                <section class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center">3</span>
+                            <h2 class="font-bold text-base sm:text-lg">Patiekalai ir gėrimai</h2>
+                        </div>
+                        <span id="items-count-badge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                            0 vnt.
+                        </span>
+                    </div>
+
+                    <!-- Add New Item Form -->
+                    <form onsubmit="handleAddItem(event)" class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3.5 sm:p-4 border border-slate-200/70 dark:border-slate-700/60 mb-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 mb-3">
+                            <div class="sm:col-span-6">
+                                <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Patiekalas / gėrimas</label>
+                                <input
+                                    id="item-name-input"
+                                    type="text"
+                                    placeholder="Pvz.: Cezario salotos, Pica..."
+                                    class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                            </div>
+                            <div class="grid grid-cols-2 sm:col-span-6 gap-2.5">
+                                <div>
+                                    <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Kiekis</label>
+                                    <input
+                                        id="item-qty-input"
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value="1"
+                                        class="w-full px-3 py-2.5 text-sm font-semibold text-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Vnt. kaina (€)</label>
+                                    <input
+                                        id="item-price-input"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        required
+                                        class="w-full px-3.5 py-2.5 text-sm font-bold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Who ordered this new item before adding -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-200/70 dark:border-slate-700/60">
+                            <div class="flex items-center flex-wrap gap-1.5">
+                                <span class="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">Kas užsisakė:</span>
+                                <button
+                                    type="button"
+                                    onclick="toggleNewItemAllPeople()"
+                                    id="new-item-all-btn"
+                                    class="text-xs px-2.5 py-1 rounded-lg font-semibold border transition"
+                                >
+                                    Visi
+                                </button>
+                                <div id="new-item-people-selector" class="flex flex-wrap gap-1.5">
+                                    <!-- Rendered via JS -->
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition flex items-center justify-center gap-1.5 shrink-0"
+                            >
+                                <i class="fa-solid fa-plus"></i>
+                                <span>Pridėti patiekalą</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Quick category chips -->
+                    <div class="flex flex-wrap items-center gap-1.5 mb-4">
+                        <span class="text-[11px] text-slate-400 mr-1">Dažni patiekalai:</span>
+                        <button type="button" onclick="prefillItemName('Dienos pietūs')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">🍽️ Dienos pietūs</button>
+                        <button type="button" onclick="prefillItemName('Užkandžių rinkinys')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">🧀 Užkandžiai</button>
+                        <button type="button" onclick="prefillItemName('Pica')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">🍕 Pica</button>
+                        <button type="button" onclick="prefillItemName('Gėrimai')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">🥤 Gėrimai</button>
+                        <button type="button" onclick="prefillItemName('Kava / Desertas')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">☕ Kava / Desertas</button>
+                    </div>
+
+                    <!-- Items List Container -->
+                    <div id="items-list" class="space-y-3">
+                        <!-- Rendered via JS -->
+                    </div>
+                </section>
+
+                <!-- 4. ARBATPINIGIAI IR PAPILDOMI MOKESČIAI / NUOLAIDOS -->
+                <section class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center">4</span>
+                            <h2 class="font-bold text-base sm:text-lg">Arbatpinigiai ir nuolaidos</h2>
+                        </div>
+                    </div>
+
+                    <!-- Tip Preset Buttons -->
+                    <div class="mb-5">
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Arbatpinigių dydis:</label>
+                        <div class="grid grid-cols-5 gap-2 mb-3">
+                            <button type="button" onclick="setTipPreset('percent', 0)" id="tip-btn-0" class="py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm border transition">0%</button>
+                            <button type="button" onclick="setTipPreset('percent', 5)" id="tip-btn-5" class="py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm border transition">5%</button>
+                            <button type="button" onclick="setTipPreset('percent', 10)" id="tip-btn-10" class="py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm border transition">10%</button>
+                            <button type="button" onclick="setTipPreset('percent', 15)" id="tip-btn-15" class="py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm border transition">15%</button>
+                            <button type="button" onclick="setTipPreset('euro', null)" id="tip-btn-euro" class="py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm border transition">Suma €</button>
+                        </div>
+
+                        <!-- Custom Tip Input Row -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+                            <div>
+                                <label id="custom-tip-label" class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Tikslus arbatpinigių dydis (%):</label>
+                                <div class="relative">
+                                    <input
+                                        id="custom-tip-input"
+                                        type="number"
+                                        step="0.1"
+                                        min="0"
+                                        value="10"
+                                        oninput="handleCustomTipInput(this.value)"
+                                        class="w-full pl-3.5 pr-9 py-2 text-sm font-bold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                    <span id="custom-tip-unit" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Kaip dalinti arbatpinigius ir mokesčius:</label>
+                                <div class="grid grid-cols-2 gap-1.5 bg-slate-200/70 dark:bg-slate-900 p-1 rounded-xl">
+                                    <button
+                                        type="button"
+                                        id="split-mode-prop"
+                                        onclick="setExtraSplitMode('proportional')"
+                                        class="py-1.5 px-2 rounded-lg text-xs font-semibold transition"
+                                    >
+                                        Proporcingai
+                                    </button>
+                                    <button
+                                        type="button"
+                                        id="split-mode-equal"
+                                        onclick="setExtraSplitMode('equal')"
+                                        class="py-1.5 px-2 rounded-lg text-xs font-semibold transition"
+                                    >
+                                        Po lygiai
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Extra Discount or Fee -->
+                    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                Nuolaida visai sąskaitai (€):
+                            </label>
+                            <div class="relative">
+                                <input
+                                    id="discount-input"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0.00"
+                                    oninput="handleDiscountChange(this.value)"
+                                    class="w-full pl-3.5 pr-9 py-2 text-sm font-semibold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-600">-€</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                Papildomas mokestis / aptarnavimas (€):
+                            </label>
+                            <div class="relative">
+                                <input
+                                    id="extra-fee-input"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0.00"
+                                    oninput="handleExtraFeeChange(this.value)"
+                                    class="w-full pl-3.5 pr-9 py-2 text-sm font-semibold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">+€</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- RIGHT COLUMN: Final Summary & Copy to Messenger/WhatsApp -->
+            <div class="lg:col-span-5 lg:sticky lg:top-20 space-y-6">
+
+                <section class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-md border border-slate-200/90 dark:border-slate-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center">5</span>
+                            <h2 class="font-bold text-base sm:text-lg">Galutinė suvestinė</h2>
+                        </div>
+                        <button
+                            onclick="copyFullSummary()"
+                            class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-semibold text-xs sm:text-sm shadow-sm shadow-indigo-500/20 transition flex items-center gap-2"
+                        >
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Kopijuoti suvestinę</span>
+                        </button>
+                    </div>
+
+                    <!-- Grand Total Banner -->
+                    <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-4 sm:p-5 mb-5 shadow-inner">
+                        <div class="flex items-baseline justify-between mb-3">
+                            <span class="text-xs uppercase tracking-wider text-indigo-200/80 font-semibold">Viso mokėti (su arbatpinigiais)</span>
+                            <span id="summary-grand-total" class="text-2xl sm:text-3xl font-extrabold tracking-tight">0.00 €</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 pt-3 border-t border-white/10 text-xs">
+                            <div>
+                                <span class="text-indigo-200/70 block">Užsakymai</span>
+                                <span id="summary-subtotal" class="font-bold text-sm">0.00 €</span>
+                            </div>
+                            <div>
+                                <span class="text-indigo-200/70 block">Arbatpinigiai</span>
+                                <span id="summary-tip-total" class="font-bold text-sm text-emerald-300">0.00 €</span>
+                            </div>
+                            <div>
+                                <span class="text-indigo-200/70 block">Korekcijos</span>
+                                <span id="summary-adjustments" class="font-bold text-sm">0.00 €</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Per-Person Breakdown Cards -->
+                    <div id="person-summary-list" class="space-y-3 mb-5">
+                        <!-- Rendered via JS -->
+                    </div>
+
+                    <!-- Optional Payment Details (IBAN / Revolut) for copied message -->
+                    <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                            <i class="fa-solid fa-building-columns mr-1 text-indigo-500"></i>
+                            Sąskaita / Revolut / Tel. nr. pavedimui (pridedama kopijuojant):
+                        </label>
+                        <input
+                            id="payment-info-input"
+                            type="text"
+                            placeholder="Pvz.: LT12 3456 7890... arba Revolut @vardas"
+                            oninput="handlePaymentInfoChange(this.value)"
+                            class="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                    </div>
+
+                    <!-- Text Preview for Messenger / WhatsApp -->
+                    <details class="mt-4 group">
+                        <summary class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 cursor-pointer select-none flex items-center gap-1.5">
+                            <i class="fa-solid fa-eye text-[11px]"></i>
+                            <span>Peržiūrėti Messenger / WhatsApp žinutės tekstą</span>
+                        </summary>
+                        <div class="mt-2.5 relative">
+                            <pre id="message-preview-box" class="text-xs bg-slate-50 dark:bg-slate-800/90 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 whitespace-pre-wrap font-mono text-slate-700 dark:text-slate-300 leading-relaxed"></pre>
+                        </div>
+                    </details>
+                </section>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Reset Confirmation Modal -->
+    <div id="reset-modal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
+            <div class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-4 text-xl">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h3 class="text-lg font-bold mb-1">Išvalyti visą sąskaitą?</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                Bus pašalinti visi įvesti patiekalai, čekio suma ir atstatytas pradinis dalyvių sąrašas.
+            </p>
+            <div class="flex gap-2.5 justify-end">
+                <button onclick="closeResetModal()" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition">
+                    Atšaukti
+                </button>
+                <button onclick="confirmResetAll()" class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white transition">
+                    Taip, išvalyti
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GitHub Pages & Subdomain Instructions Modal -->
+    <div id="github-modal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-brands fa-github text-2xl"></i>
+                    <h3 class="text-lg font-bold">Talpinimas GitHub Pages su subdomenu</h3>
+                </div>
+                <button onclick="closeGithubModal()" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p>Ši aplikacija parašyta viename <strong>index.html</strong> faile, todėl jai nereikia jokio serverio ar duomenų bazės.</p>
+                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <p class="font-bold text-slate-800 dark:text-slate-100">1. Įkėlimas į GitHub:</p>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Sukurkite naują viešą (Public) GitHub repozitoriją, pvz., <code>saskaita</code>.</li>
+                        <li>Įkelkite šį failą pavadinimu <code>index.html</code>.</li>
+                        <li>Eikite į <strong>Settings → Pages</strong> ir prie <em>Branch</em> pasirinkite <code>main</code> (Save).</li>
+                    </ul>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <p class="font-bold text-slate-800 dark:text-slate-100">2. Nuosavo subdomeno prijungimas (pvz., <code>saskaita.manodomenas.lt</code>):</p>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Savo domeno DNS valdyme sukurkite <strong>CNAME</strong> įrašą:</li>
+                        <li><strong>Name / Host:</strong> <code>saskaita</code> (arba kitas norimas subdomenas)</li>
+                        <li><strong>Target / Value:</strong> <code>jusu-github-vardas.github.io</code></li>
+                        <li>GitHub repozitorijoje (<strong>Settings → Pages → Custom domain</strong>) įrašykite <code>saskaita.manodomenas.lt</code>, išsaugokite ir pažymėkite <strong>Enforce HTTPS</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeGithubModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition">
+                    Supratau
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- COLOR PALETTE FOR PARTICIPANT AVATARS ---
+        const AVATAR_COLORS = [
+            'bg-indigo-500 text-white',
+            'bg-emerald-500 text-white',
+            'bg-amber-500 text-white',
+            'bg-rose-500 text-white',
+            'bg-sky-500 text-white',
+            'bg-purple-500 text-white',
+            'bg-teal-500 text-white',
+            'bg-orange-500 text-white'
+        ];
+
+        // --- APPLICATION STATE ---
+        const STORAGE_KEY = 'lt_bill_splitter_state_v1';
+
+        let state = {
+            checkTotal: 0,
+            autoSplitRemainder: false,
+            people: [
+                { id: 'p1', name: 'Tomas' },
+                { id: 'p2', name: 'Ieva' },
+                { id: 'p3', name: 'Jonas' }
+            ],
+            items: [
+                { id: 'i1', name: 'Užkandžių rinkinys prie stalo', qty: 1, price: 14.40, assignedTo: ['p1', 'p2', 'p3'] },
+                { id: 'i2', name: 'Antrekoto kepsnys', qty: 1, price: 18.50, assignedTo: ['p1'] },
+                { id: 'i3', name: 'Lašišos kepsnys su daržovėmis', qty: 1, price: 16.00, assignedTo: ['p2'] },
+                { id: 'i4', name: 'Neapolietiška pica', qty: 1, price: 12.50, assignedTo: ['p3'] }
+            ],
+            newItemSelectedPeople: ['p1', 'p2', 'p3'],
+            tipMode: 'percent', // 'percent' or 'euro'
+            tipValue: 10,
+            extraSplitMode: 'proportional', // 'proportional' or 'equal'
+            discount: 0,
+            extraFee: 0,
+            paymentInfo: ''
+        };
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadStateFromStorage();
+            syncInputsFromState();
+            renderAll();
+        });
+
+        function saveStateToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.warn('Nepavyko išsaugoti localStorage:', e);
+            }
+        }
+
+        function loadStateFromStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    state = { ...state, ...parsed };
+                    // Ensure newItemSelectedPeople has valid IDs
+                    const validIds = state.people.map(p => p.id);
+                    state.newItemSelectedPeople = (state.newItemSelectedPeople || []).filter(id => validIds.includes(id));
+                    if (state.newItemSelectedPeople.length === 0 && validIds.length > 0) {
+                        state.newItemSelectedPeople = [...validIds];
+                    }
+                }
+            } catch (e) {
+                console.warn('Nepavyko nuskaityti localStorage:', e);
+            }
+        }
+
+        function syncInputsFromState() {
+            const checkInput = document.getElementById('check-total-input');
+            checkInput.value = state.checkTotal > 0 ? state.checkTotal : '';
+
+            document.getElementById('split-remainder-toggle').checked = !!state.autoSplitRemainder;
+            document.getElementById('custom-tip-input').value = state.tipValue;
+            document.getElementById('discount-input').value = state.discount > 0 ? state.discount : '';
+            document.getElementById('extra-fee-input').value = state.extraFee > 0 ? state.extraFee : '';
+            document.getElementById('payment-info-input').value = state.paymentInfo || '';
+        }
+
+        // --- THEME MANAGEMENT ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('lt_bill_theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('lt_bill_theme', isDark ? 'dark' : 'light');
+        }
+
+        // --- FORMATTERS ---
+        function formatEuro(val) {
+            const num = Number(val) || 0;
+            return num.toFixed(2) + ' €';
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // --- 1. CHECK TOTAL & REMAINDER HANDLERS ---
+        function handleCheckTotalChange(val) {
+            const parsed = parseFloat(val);
+            state.checkTotal = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+            saveStateToStorage();
+            renderAll();
+        }
+
+        function toggleAutoSplitRemainder(checked) {
+            state.autoSplitRemainder = checked;
+            saveStateToStorage();
+            renderAll();
+        }
+
+        function convertRemainderToDish() {
+            const itemsSum = getItemsTotal();
+            const diff = +(state.checkTotal - itemsSum).toFixed(2);
+            if (diff <= 0) return;
+
+            const allIds = state.people.map(p => p.id);
+            state.items.push({
+                id: 'item_' + Date.now(),
+                name: 'Nepaskirstytas čekio likutis',
+                qty: 1,
+                price: diff,
+                assignedTo: allIds
+            });
+            state.autoSplitRemainder = false;
+            document.getElementById('split-remainder-toggle').checked = false;
+            saveStateToStorage();
+            renderAll();
+            showToast('Likutis pridėtas kaip bendra prekė visiems!');
+        }
+
+        // --- 2. PARTICIPANTS HANDLERS ---
+        function handleAddPerson(e) {
+            e.preventDefault();
+            const input = document.getElementById('person-name-input');
+            const name = input.value.trim();
+            if (!name) return;
+            addPersonByName(name);
+            input.value = '';
+            input.focus();
+        }
+
+        function quickAddPerson(name) {
+            addPersonByName(name);
+        }
+
+        function addPersonByName(name) {
+            // Check duplicate name
+            const exists = state.people.some(p => p.name.toLowerCase() === name.toLowerCase());
+            const finalName = exists ? `${name} (${state.people.length + 1})` : name;
+            const newId = 'p_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+            state.people.push({ id: newId, name: finalName });
+            state.newItemSelectedPeople.push(newId);
+            saveStateToStorage();
+            renderAll();
+        }
+
+        function removePerson(personId) {
+            if (state.people.length <= 1) {
+                showToast('Turi likti bent 1 dalyvis prie stalo!', true);
+                return;
+            }
+            state.people = state.people.filter(p => p.id !== personId);
+            state.newItemSelectedPeople = state.newItemSelectedPeople.filter(id => id !== personId);
+
+            // Also remove from items
+            state.items.forEach(item => {
+                item.assignedTo = item.assignedTo.filter(id => id !== personId);
+            });
+
+            saveStateToStorage();
+            renderAll();
+        }
+
+        // --- 3. DISHES / ITEMS HANDLERS ---
+        function prefillItemName(name) {
+            const nameInput = document.getElementById('item-name-input');
+            nameInput.value = name;
+            document.getElementById('item-price-input').focus();
+        }
+
+        function toggleNewItemPerson(personId) {
+            const idx = state.newItemSelectedPeople.indexOf(personId);
+            if (idx > -1) {
+                state.newItemSelectedPeople.splice(idx, 1);
+            } else {
+                state.newItemSelectedPeople.push(personId);
+            }
+            renderNewItemPeopleSelector();
+        }
+
+        function toggleNewItemAllPeople() {
+            const allIds = state.people.map(p => p.id);
+            if (state.newItemSelectedPeople.length === allIds.length) {
+                state.newItemSelectedPeople = [];
+            } else {
+                state.newItemSelectedPeople = [...allIds];
+            }
+            renderNewItemPeopleSelector();
+        }
+
+        function handleAddItem(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('item-name-input');
+            const qtyInput = document.getElementById('item-qty-input');
+            const priceInput = document.getElementById('item-price-input');
+
+            const name = nameInput.value.trim() || `Patiekalas #${state.items.length + 1}`;
+            const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
+            const price = parseFloat(priceInput.value);
+
+            if (isNaN(price) || price <= 0) {
+                showToast('Įveskite teisingą patiekalo kainą (€)', true);
+                priceInput.focus();
+                return;
+            }
+
+            const assigned = state.newItemSelectedPeople.length > 0
+                ? [...state.newItemSelectedPeople]
+                : state.people.map(p => p.id);
+
+            state.items.push({
+                id: 'item_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                name,
+                qty,
+                price: +price.toFixed(2),
+                assignedTo: assigned
+            });
+
+            nameInput.value = '';
+            qtyInput.value = '1';
+            priceInput.value = '';
+            nameInput.focus();
+
+            saveStateToStorage();
+            renderAll();
+        }
+
+        function toggleItemPersonAssignment(itemId, personId) {
+            const item = state.items.find(i => i.id === itemId);
+            if (!item) return;
+
+            const idx = item.assignedTo.indexOf(personId);
+            if (idx > -1) {
+                item.assignedTo.splice(idx, 1);
+            } else {
+                item.assignedTo.push(personId);
+            }
+            saveStateToStorage();
+            renderAll();
+        }
+
+        function assignItemToAll(itemId) {
+            const item = state.items.find(i => i.id === itemId);
+            if (!item) return;
+            const allIds = state.people.map(p => p.id);
+            if (item.assignedTo.length === allIds.length) {
+                item.assignedTo = [];
+            } else {
+                item.assignedTo = [...allIds];
+            }
+            saveStateToStorage();
+            renderAll();
+        }
+
+        function updateItemField(itemId, field, rawValue) {
+            const item = state.items.find(i => i.id === itemId);
+            if (!item) return;
+
+            if (field === 'name') {
+                item.name = rawValue.trim() || 'Patiekalas';
+            } else if (field === 'price') {
+                const val = parseFloat(rawValue);
+                item.price = isNaN(val) || val < 0 ? 0 : val;
+            } else if (field === 'qty') {
+                const val = parseInt(rawValue, 10);
+                item.qty = isNaN(val) || val < 1 ? 1 : val;
+            }
+            saveStateToStorage();
+            renderCheckStatus();
+            renderSummary();
+        }
+
+        function removeItem(itemId) {
+            state.items = state.items.filter(i => i.id !== itemId);
+            saveStateToStorage();
+            renderAll();
+        }
+
+        // --- 4. TIPS & ADJUSTMENTS HANDLERS ---
+        function setTipPreset(mode, val) {
+            state.tipMode = mode;
+            if (val !== null) {
+                state.tipValue = val;
+                document.getElementById('custom-tip-input').value = val;
+            }
+            saveStateToStorage();
+            renderAll();
+        }
+
+        function handleCustomTipInput(val) {
+            const parsed = parseFloat(val);
+            state.tipValue = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+            saveStateToStorage();
+            renderTipControls();
+            renderSummary();
+        }
+
+        function setExtraSplitMode(mode) {
+            state.extraSplitMode = mode;
+            saveStateToStorage();
+            renderTipControls();
+            renderSummary();
+        }
+
+        function handleDiscountChange(val) {
+            const parsed = parseFloat(val);
+            state.discount = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+            saveStateToStorage();
+            renderSummary();
+        }
+
+        function handleExtraFeeChange(val) {
+            const parsed = parseFloat(val);
+            state.extraFee = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+            saveStateToStorage();
+            renderSummary();
+        }
+
+        function handlePaymentInfoChange(val) {
+            state.paymentInfo = val.trim();
+            saveStateToStorage();
+            renderSummary();
+        }
+
+        // --- CALCULATIONS ---
+        function getItemsTotal() {
+            return state.items.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
+        }
+
+        function calculateBreakdown() {
+            const peopleCount = state.people.length;
+            const itemsTotal = getItemsTotal();
+
+            // Unassigned remainder from receipt check total
+            const rawRemainder = +(state.checkTotal - itemsTotal).toFixed(2);
+            const activeRemainderToSplit = (state.checkTotal > 0 && rawRemainder > 0 && state.autoSplitRemainder)
+                ? rawRemainder
+                : 0;
+
+            const baseOrderSubtotal = itemsTotal + activeRemainderToSplit;
+
+            // Tip total calculation
+            let totalTip = 0;
+            if (state.tipMode === 'percent') {
+                totalTip = baseOrderSubtotal * (state.tipValue / 100);
+            } else {
+                totalTip = state.tipValue;
+            }
+
+            // Net adjustments (extraFee - discount)
+            const netAdjustment = (state.extraFee || 0) - (state.discount || 0);
+
+            // Initialize per-person map
+            const personMap = {};
+            state.people.forEach((p, idx) => {
+                personMap[p.id] = {
+                    id: p.id,
+                    name: p.name,
+                    colorClass: AVATAR_COLORS[idx % AVATAR_COLORS.length],
+                    dishes: [],
+                    dishesSubtotal: 0,
+                    remainderShare: 0,
+                    orderSubtotal: 0,
+                    tipShare: 0,
+                    adjustmentShare: 0,
+                    finalTotal: 0
+                };
+            });
+
+            // Distribute assigned items
+            let unassignedItemsAmount = 0;
+            state.items.forEach(item => {
+                const lineTotal = (item.price || 0) * (item.qty || 1);
+                const validAssignees = item.assignedTo.filter(id => personMap[id]);
+                if (validAssignees.length === 0) {
+                    unassignedItemsAmount += lineTotal;
+                    return;
+                }
+                const sharePrice = lineTotal / validAssignees.length;
+                validAssignees.forEach(pid => {
+                    personMap[pid].dishes.push({
+                        name: item.name,
+                        qty: item.qty || 1,
+                        sharedAmong: validAssignees.length,
+                        shareAmount: sharePrice
+                    });
+                    personMap[pid].dishesSubtotal += sharePrice;
+                });
+            });
+
+            // Distribute receipt remainder if enabled
+            if (activeRemainderToSplit > 0 && peopleCount > 0) {
+                const remShare = activeRemainderToSplit / peopleCount;
+                state.people.forEach(p => {
+                    personMap[p.id].remainderShare = remShare;
+                });
+            }
+
+            // Calculate each person's orderSubtotal
+            state.people.forEach(p => {
+                const entry = personMap[p.id];
+                entry.orderSubtotal = entry.dishesSubtotal + entry.remainderShare;
+            });
+
+            // Total assigned subtotal across all people
+            const assignedOrderSubtotal = Object.values(personMap).reduce((s, p) => s + p.orderSubtotal, 0);
+
+            // Distribute tips and adjustments (proportional or equal)
+            state.people.forEach(p => {
+                const entry = personMap[p.id];
+                let ratio = 0;
+
+                if (state.extraSplitMode === 'equal') {
+                    ratio = peopleCount > 0 ? (1 / peopleCount) : 0;
+                } else {
+                    // Proportional to orderSubtotal
+                    if (assignedOrderSubtotal > 0) {
+                        ratio = entry.orderSubtotal / assignedOrderSubtotal;
+                    } else if (peopleCount > 0) {
+                        ratio = 1 / peopleCount;
+                    }
+                }
+
+                entry.tipShare = totalTip * ratio;
+                entry.adjustmentShare = netAdjustment * ratio;
+                entry.finalTotal = Math.max(0, entry.orderSubtotal + entry.tipShare + entry.adjustmentShare);
+            });
+
+            const grandTotal = Math.max(0, assignedOrderSubtotal + totalTip + netAdjustment);
+
+            return {
+                itemsTotal,
+                rawRemainder,
+                activeRemainderToSplit,
+                unassignedItemsAmount,
+                assignedOrderSubtotal,
+                totalTip,
+                netAdjustment,
+                grandTotal,
+                peopleBreakdown: Object.values(personMap)
+            };
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function renderAll() {
+            renderCheckStatus();
+            renderPeopleList();
+            renderNewItemPeopleSelector();
+            renderItemsList();
+            renderTipControls();
+            renderSummary();
+        }
+
+        function renderCheckStatus() {
+            const itemsSum = getItemsTotal();
+            const checkTotal = state.checkTotal;
+
+            const assignedLabel = document.getElementById('assigned-sum-label');
+            const remainingTitle = document.getElementById('remaining-title-label');
+            const remainingLabel = document.getElementById('remaining-sum-label');
+            const progressBar = document.getElementById('check-progress-bar');
+            const statusHint = document.getElementById('check-status-hint');
+            const unassignedActions = document.getElementById('unassigned-actions');
+            const remainderInline = document.getElementById('remainder-inline-amount');
+
+            assignedLabel.textContent = formatEuro(itemsSum);
+
+            if (checkTotal <= 0) {
+                remainingTitle.textContent = 'Čekio suma neįvesta:';
+                remainingLabel.textContent = '—';
+                remainingLabel.className = 'font-bold text-slate-400';
+                progressBar.style.width = itemsSum > 0 ? '100%' : '0%';
+                progressBar.className = 'h-full bg-indigo-600 transition-all duration-300 rounded-full';
+                statusHint.textContent = 'Bendra suma skaičiuojama automatiškai iš žemiau pridėtų patiekalų.';
+                unassignedActions.classList.add('hidden');
+                return;
+            }
+
+            const diff = +(checkTotal - itemsSum).toFixed(2);
+            const pct = Math.min(100, Math.max(0, (itemsSum / checkTotal) * 100));
+            progressBar.style.width = pct.toFixed(1) + '%';
+
+            if (Math.abs(diff) < 0.01) {
+                remainingTitle.textContent = 'Liko nepaskirstyta:';
+                remainingLabel.textContent = '0.00 € (Pilnai paskirstyta!)';
+                remainingLabel.className = 'font-bold text-emerald-600 dark:text-emerald-400';
+                progressBar.className = 'h-full bg-emerald-500 transition-all duration-300 rounded-full';
+                statusHint.textContent = 'Puiku! Visi patiekalai tiksliai atitinka įvestą čekio sumą.';
+                unassignedActions.classList.add('hidden');
+            } else if (diff > 0) {
+                remainingTitle.textContent = 'Liko nepaskirstyta:';
+                remainingLabel.textContent = formatEuro(diff);
+                remainingLabel.className = 'font-bold text-amber-600 dark:text-amber-400';
+                progressBar.className = 'h-full bg-amber-500 transition-all duration-300 rounded-full';
+                statusHint.textContent = state.autoSplitRemainder
+                    ? `Nepaskirstytas likutis (${formatEuro(diff)}) automatiškai padalintas visiems po lygiai.`
+                    : `Dar liko ${formatEuro(diff)} iš čekio sumos. Pridėkite trūkstamus patiekalus arba padalinkite likutį po lygiai.`;
+                remainderInline.textContent = formatEuro(diff);
+                unassignedActions.classList.remove('hidden');
+            } else {
+                // Items exceed check total
+                remainingTitle.textContent = 'Viršyta čekio suma:';
+                remainingLabel.textContent = '+' + formatEuro(Math.abs(diff));
+                remainingLabel.className = 'font-bold text-rose-600 dark:text-rose-400';
+                progressBar.className = 'h-full bg-rose-500 transition-all duration-300 rounded-full';
+                statusHint.textContent = `Pridėtų patiekalų suma viršija įvestą čekio sumą ${formatEuro(Math.abs(diff))}. Patikrinkite kainas arba čekio sumą.`;
+                unassignedActions.classList.add('hidden');
+            }
+        }
+
+        function renderPeopleList() {
+            const container = document.getElementById('people-list');
+            const badge = document.getElementById('people-count-badge');
+            badge.textContent = `${state.people.length} asm.`;
+
+            container.innerHTML = state.people.map((person, index) => {
+                const colorClass = AVATAR_COLORS[index % AVATAR_COLORS.length];
+                const initial = person.name.charAt(0).toUpperCase();
+                return `
+                    <div class="inline-flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 text-sm font-medium fade-in">
+                        <span class="w-6 h-6 rounded-xl ${colorClass} font-bold text-xs flex items-center justify-center shadow-2xs">
+                            ${escapeHtml(initial)}
+                        </span>
+                        <span class="text-slate-800 dark:text-slate-100">${escapeHtml(person.name)}</span>
+                        <button
+                            type="button"
+                            onclick="removePerson('${person.id}')"
+                            title="Pašalinti ${escapeHtml(person.name)}"
+                            class="w-5 h-5 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950 text-slate-400 hover:text-rose-600 transition flex items-center justify-center ml-0.5"
+                        >
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderNewItemPeopleSelector() {
+            const container = document.getElementById('new-item-people-selector');
+            const allBtn = document.getElementById('new-item-all-btn');
+            const allSelected = state.people.length > 0 && state.newItemSelectedPeople.length === state.people.length;
+
+            allBtn.className = allSelected
+                ? 'text-xs px-2.5 py-1 rounded-lg font-semibold border bg-indigo-600 text-white border-indigo-600 transition'
+                : 'text-xs px-2.5 py-1 rounded-lg font-semibold border bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 transition';
+
+            container.innerHTML = state.people.map((p, idx) => {
+                const isSelected = state.newItemSelectedPeople.includes(p.id);
+                return `
+                    <button
+                        type="button"
+                        onclick="toggleNewItemPerson('${p.id}')"
+                        class="text-xs px-2.5 py-1 rounded-lg font-medium border transition flex items-center gap-1 ${
+                            isSelected
+                                ? 'bg-indigo-50 dark:bg-indigo-950/90 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700 font-semibold'
+                                : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-700 opacity-75 hover:opacity-100'
+                        }"
+                    >
+                        <span>${escapeHtml(p.name)}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function renderItemsList() {
+            const container = document.getElementById('items-list');
+            const badge = document.getElementById('items-count-badge');
+            badge.textContent = `${state.items.length} vnt.`;
+
+            if (state.items.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400">
+                        <i class="fa-solid fa-utensils text-2xl mb-2 opacity-50"></i>
+                        <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Patiekalų sąrašas kol kas tuščias</p>
+                        <p class="text-xs mt-0.5">Įveskite patiekalo pavadinimą, kainą ir pažymėkite, kas jį valgė.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = state.items.map(item => {
+                const lineTotal = (item.price || 0) * (item.qty || 1);
+                const validAssignees = item.assignedTo.filter(id => state.people.some(p => p.id === id));
+                const isAllSelected = state.people.length > 0 && validAssignees.length === state.people.length;
+                const perPersonShare = validAssignees.length > 0 ? lineTotal / validAssignees.length : 0;
+
+                return `
+                    <div class="p-3.5 sm:p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/70 hover:border-indigo-300 dark:hover:border-indigo-800 transition fade-in">
+                        <div class="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 mb-3">
+                            <!-- Editable Dish Name -->
+                            <div class="flex items-center gap-2 flex-1 min-w-[160px]">
+                                <input
+                                    type="text"
+                                    value="${escapeHtml(item.name)}"
+                                    onchange="updateItemField('${item.id}', 'name', this.value)"
+                                    class="font-semibold text-sm sm:text-base bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 focus:outline-none w-full py-0.5 text-slate-800 dark:text-slate-100"
+                                >
+                            </div>
+
+                            <!-- Qty, Unit Price & Total -->
+                            <div class="flex items-center gap-2 shrink-0 ml-auto">
+                                <div class="flex items-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 px-2 py-1">
+                                    <span class="text-[11px] text-slate-400 mr-1">Kiekis:</span>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value="${item.qty || 1}"
+                                        onchange="updateItemField('${item.id}', 'qty', this.value)"
+                                        class="w-8 text-center text-xs font-bold bg-transparent focus:outline-none"
+                                    >
+                                </div>
+                                <div class="flex items-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 px-2.5 py-1">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value="${Number(item.price).toFixed(2)}"
+                                        onchange="updateItemField('${item.id}', 'price', this.value)"
+                                        class="w-16 text-right text-xs sm:text-sm font-bold bg-transparent focus:outline-none"
+                                    >
+                                    <span class="text-xs font-bold text-slate-400 ml-1">€</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onclick="removeItem('${item.id}')"
+                                    title="Pašalinti patiekalą"
+                                    class="w-8 h-8 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-950/80 text-slate-400 hover:text-rose-600 transition flex items-center justify-center"
+                                >
+                                    <i class="fa-regular fa-trash-can text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Participant selection pills for this item -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-200/60 dark:border-slate-700/50">
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    onclick="assignItemToAll('${item.id}')"
+                                    class="text-xs px-2.5 py-1 rounded-xl font-semibold border transition ${
+                                        isAllSelected
+                                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                                    }"
+                                >
+                                    Visi
+                                </button>
+                                ${state.people.map((person, idx) => {
+                                    const isAssigned = validAssignees.includes(person.id);
+                                    const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                                    return `
+                                        <button
+                                            type="button"
+                                            onclick="toggleItemPersonAssignment('${item.id}', '${person.id}')"
+                                            class="text-xs pl-1.5 pr-2.5 py-1 rounded-xl border transition flex items-center gap-1.5 ${
+                                                isAssigned
+                                                    ? 'bg-indigo-50 dark:bg-indigo-950/90 text-indigo-900 dark:text-indigo-200 border-indigo-300 dark:border-indigo-700 font-semibold shadow-2xs'
+                                                    : 'bg-white dark:bg-slate-900 text-slate-400 border-slate-200 dark:border-slate-700 opacity-70 hover:opacity-100'
+                                            }"
+                                        >
+                                            <span class="w-4 h-4 rounded-md ${avatarColor} text-[10px] font-bold flex items-center justify-center">
+                                                ${escapeHtml(person.name.charAt(0).toUpperCase())}
+                                            </span>
+                                            <span>${escapeHtml(person.name)}</span>
+                                        </button>
+                                    `;
+                                }).join('')}
+                            </div>
+
+                            <div class="text-xs text-right ml-auto">
+                                ${validAssignees.length === 0
+                                    ? `<span class="text-rose-600 dark:text-rose-400 font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Nepažymėta kam!</span>`
+                                    : validAssignees.length > 1
+                                        ? `<span class="text-slate-500 dark:text-slate-400">Po <strong class="text-slate-800 dark:text-slate-100">${formatEuro(perPersonShare)}</strong> (${validAssignees.length} asm.)</span>`
+                                        : `<span class="font-bold text-slate-700 dark:text-slate-200">${formatEuro(lineTotal)}</span>`
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTipControls() {
+            const presets = [0, 5, 10, 15];
+            presets.forEach(p => {
+                const btn = document.getElementById(`tip-btn-${p}`);
+                const active = state.tipMode === 'percent' && Number(state.tipValue) === p;
+                btn.className = active
+                    ? 'py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm border bg-indigo-600 text-white border-indigo-600 shadow-sm transition'
+                    : 'py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm border bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition';
+            });
+
+            const euroBtn = document.getElementById('tip-btn-euro');
+            euroBtn.className = state.tipMode === 'euro'
+                ? 'py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm border bg-indigo-600 text-white border-indigo-600 shadow-sm transition'
+                : 'py-2.5 px-2 rounded-xl font-bold text-xs sm:text-sm border bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition';
+
+            document.getElementById('custom-tip-label').textContent = state.tipMode === 'percent'
+                ? 'Tikslus arbatpinigių dydis (%):'
+                : 'Konkreti arbatpinigių suma (€):';
+            document.getElementById('custom-tip-unit').textContent = state.tipMode === 'percent' ? '%' : '€';
+
+            const propBtn = document.getElementById('split-mode-prop');
+            const equalBtn = document.getElementById('split-mode-equal');
+
+            propBtn.className = state.extraSplitMode === 'proportional'
+                ? 'py-1.5 px-2 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-2xs transition'
+                : 'py-1.5 px-2 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition';
+
+            equalBtn.className = state.extraSplitMode === 'equal'
+                ? 'py-1.5 px-2 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-2xs transition'
+                : 'py-1.5 px-2 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition';
+        }
+
+        function renderSummary() {
+            const calc = calculateBreakdown();
+
+            document.getElementById('summary-grand-total').textContent = formatEuro(calc.grandTotal);
+            document.getElementById('summary-subtotal').textContent = formatEuro(calc.assignedOrderSubtotal);
+            document.getElementById('summary-tip-total').textContent = '+' + formatEuro(calc.totalTip);
+
+            const adjEl = document.getElementById('summary-adjustments');
+            if (calc.netAdjustment > 0) {
+                adjEl.textContent = '+' + formatEuro(calc.netAdjustment);
+                adjEl.className = 'font-bold text-sm text-amber-300';
+            } else if (calc.netAdjustment < 0) {
+                adjEl.textContent = formatEuro(calc.netAdjustment);
+                adjEl.className = 'font-bold text-sm text-emerald-300';
+            } else {
+                adjEl.textContent = '0.00 €';
+                adjEl.className = 'font-bold text-sm text-indigo-200';
+            }
+
+            const listEl = document.getElementById('person-summary-list');
+
+            listEl.innerHTML = calc.peopleBreakdown.map(p => {
+                const dishesHtml = p.dishes.map(d => {
+                    const splitBadge = d.sharedAmong > 1 ? ` <span class="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium">(1/${d.sharedAmong})</span>` : '';
+                    const qtyBadge = d.qty > 1 ? `${d.qty}× ` : '';
+                    return `
+                        <div class="flex justify-between text-xs text-slate-600 dark:text-slate-400 py-0.5">
+                            <span class="truncate pr-2">• ${escapeHtml(qtyBadge + d.name)}${splitBadge}</span>
+                            <span class="font-medium shrink-0">${formatEuro(d.shareAmount)}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                const remainderHtml = p.remainderShare > 0 ? `
+                    <div class="flex justify-between text-xs text-amber-700 dark:text-amber-400 py-0.5">
+                        <span>• Nepaskirstyto čekio dalis</span>
+                        <span class="font-medium">${formatEuro(p.remainderShare)}</span>
+                    </div>
+                ` : '';
+
+                const tipHtml = p.tipShare > 0.004 ? `
+                    <div class="flex justify-between text-xs text-emerald-700 dark:text-emerald-400 py-0.5">
+                        <span>• Arbatpinigiai (${state.extraSplitMode === 'equal' ? 'po lygiai' : 'proporcingai'})</span>
+                        <span class="font-medium">+${formatEuro(p.tipShare)}</span>
+                    </div>
+                ` : '';
+
+                const adjHtml = Math.abs(p.adjustmentShare) > 0.004 ? `
+                    <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 py-0.5">
+                        <span>• Nuolaidos / mokesčiai</span>
+                        <span class="font-medium">${p.adjustmentShare > 0 ? '+' : ''}${formatEuro(p.adjustmentShare)}</span>
+                    </div>
+                ` : '';
+
+                return `
+                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-8 h-8 rounded-xl ${p.colorClass} font-bold text-sm flex items-center justify-center shadow-2xs">
+                                    ${escapeHtml(p.name.charAt(0).toUpperCase())}
+                                </span>
+                                <div>
+                                    <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white leading-tight">${escapeHtml(p.name)}</h3>
+                                    <span class="text-[11px] text-slate-400">Patiekalai: ${formatEuro(p.orderSubtotal)}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="text-right">
+                                    <span class="block text-lg sm:text-xl font-extrabold text-indigo-600 dark:text-indigo-400">${formatEuro(p.finalTotal)}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onclick="copySinglePersonSummary('${p.id}')"
+                                    title="Kopijuoti tik ${escapeHtml(p.name)} sumą"
+                                    class="p-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950 text-slate-500 hover:text-indigo-600 border border-slate-200 dark:border-slate-700 transition"
+                                >
+                                    <i class="fa-regular fa-copy text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Detailed lines -->
+                        <div class="mt-2 pt-2 border-t border-slate-200/70 dark:border-slate-700/60 space-y-0.5">
+                            ${dishesHtml || (p.remainderShare <= 0 ? '<p class="text-xs text-slate-400 italic">Nepažymėta jokių patiekalų</p>' : '')}
+                            ${remainderHtml}
+                            ${tipHtml}
+                            ${adjHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Update Messenger / WhatsApp text preview
+            document.getElementById('message-preview-box').textContent = buildSummaryText();
+        }
+
+        // --- TEXT GENERATION & CLIPBOARD COPY ---
+        function buildSummaryText() {
+            const calc = calculateBreakdown();
+            const lines = [];
+            lines.push('🧾 RESTORANO SĄSKAITOS SUVESTINĖ');
+            lines.push('────────────────────');
+
+            calc.peopleBreakdown.forEach(p => {
+                lines.push(`👤 ${p.name}: ${formatEuro(p.finalTotal)}`);
+                const itemParts = p.dishes.map(d => {
+                    const shareNote = d.sharedAmong > 1 ? ` (1/${d.sharedAmong})` : '';
+                    return `${d.name}${shareNote} ${formatEuro(d.shareAmount)}`;
+                });
+                if (p.remainderShare > 0) {
+                    itemParts.push(`čekio likutis ${formatEuro(p.remainderShare)}`);
+                }
+                if (itemParts.length > 0) {
+                    lines.push(`   🍽️ ${itemParts.join(', ')}`);
+                }
+                if (p.tipShare > 0.004) {
+                    lines.push(`   ✨ Arbatpinigiai: +${formatEuro(p.tipShare)}`);
+                }
+                if (Math.abs(p.adjustmentShare) > 0.004) {
+                    lines.push(`   🏷️ Korekcija: ${p.adjustmentShare > 0 ? '+' : ''}${formatEuro(p.adjustmentShare)}`);
+                }
+            });
+
+            lines.push('────────────────────');
+            lines.push(`💰 Bendra suma: ${formatEuro(calc.grandTotal)} (iš jų arbatpinigiai: ${formatEuro(calc.totalTip)})`);
+
+            if (state.paymentInfo) {
+                lines.push(`🏦 Pavedimui: ${state.paymentInfo}`);
+            }
+
+            return lines.join('\n');
+        }
+
+        function copyFullSummary() {
+            const text = buildSummaryText();
+            copyTextToClipboard(text, 'Visa suvestinė nukopijuota! Galite įklijuoti į Messenger / WhatsApp.');
+        }
+
+        function copySinglePersonSummary(personId) {
+            const calc = calculateBreakdown();
+            const p = calc.peopleBreakdown.find(x => x.id === personId);
+            if (!p) return;
+
+            const parts = p.dishes.map(d => `${d.name}${d.sharedAmong > 1 ? ` (1/${d.sharedAmong})` : ''}: ${formatEuro(d.shareAmount)}`);
+            if (p.remainderShare > 0) parts.push(`Čekio likutis: ${formatEuro(p.remainderShare)}`);
+            if (p.tipShare > 0.004) parts.push(`Arbatpinigiai: +${formatEuro(p.tipShare)}`);
+
+            let msg = `🧾 ${p.name}, tavo dalis už pietus: ${formatEuro(p.finalTotal)} (${parts.join(', ')}).`;
+            if (state.paymentInfo) {
+                msg += ` Pavedimui: ${state.paymentInfo}`;
+            }
+
+            copyTextToClipboard(msg, `${p.name} suvestinė nukopijuota!`);
+        }
+
+        function copyTextToClipboard(text, successMessage) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast(successMessage);
+            } catch (err) {
+                showToast('Nepavyko nukopijuoti teksto', true);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // --- DEMO DATA & RESET ---
+        function loadDemoData() {
+            state = {
+                checkTotal: 65.00,
+                autoSplitRemainder: true,
+                people: [
+                    { id: 'p1', name: 'Tomas' },
+                    { id: 'p2', name: 'Ieva' },
+                    { id: 'p3', name: 'Jonas' }
+                ],
+                items: [
+                    { id: 'i1', name: 'Užkandžių rinkinys prie stalo', qty: 1, price: 14.40, assignedTo: ['p1', 'p2', 'p3'] },
+                    { id: 'i2', name: 'Antrekoto kepsnys', qty: 1, price: 18.50, assignedTo: ['p1'] },
+                    { id: 'i3', name: 'Lašišos kepsnys su daržovėmis', qty: 1, price: 16.00, assignedTo: ['p2'] },
+                    { id: 'i4', name: 'Neapolietiška pica', qty: 1, price: 12.50, assignedTo: ['p3'] }
+                ],
+                newItemSelectedPeople: ['p1', 'p2', 'p3'],
+                tipMode: 'percent',
+                tipValue: 10,
+                extraSplitMode: 'proportional',
+                discount: 0,
+                extraFee: 0,
+                paymentInfo: 'LT12 7300 0101 2345 6789 (Tomas)'
+            };
+            saveStateToStorage();
+            syncInputsFromState();
+            renderAll();
+            showToast('Užkrauta pavyzdinė restorano sąskaita!');
+        }
+
+        function openResetModal() {
+            document.getElementById('reset-modal').classList.remove('hidden');
+        }
+
+        function closeResetModal() {
+            document.getElementById('reset-modal').classList.add('hidden');
+        }
+
+        function confirmResetAll() {
+            state = {
+                checkTotal: 0,
+                autoSplitRemainder: false,
+                people: [
+                    { id: 'p1', name: 'Tomas' },
+                    { id: 'p2', name: 'Ieva' }
+                ],
+                items: [],
+                newItemSelectedPeople: ['p1', 'p2'],
+                tipMode: 'percent',
+                tipValue: 10,
+                extraSplitMode: 'proportional',
+                discount: 0,
+                extraFee: 0,
+                paymentInfo: state.paymentInfo || ''
+            };
+            saveStateToStorage();
+            syncInputsFromState();
+            renderAll();
+            closeResetModal();
+            showToast('Sąskaita išvalyta!');
+        }
+
+        function openGithubModal() {
+            document.getElementById('github-modal').classList.remove('hidden');
+        }
+
+        function closeGithubModal() {
+            document.getElementById('github-modal').classList.add('hidden');
+        }
+
+        // --- TOAST HELPER ---
+        let toastTimeout = null;
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-message');
+            const iconEl = document.getElementById('toast-icon');
+
+            msgEl.textContent = message;
+            iconEl.className = isError
+                ? 'fa-solid fa-circle-exclamation text-rose-400 text-base'
+                : 'fa-solid fa-circle-check text-emerald-400 text-base';
+
+            toast.classList.remove('hidden');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3200);
+        }
+    </script>
+</body>
+</html>
